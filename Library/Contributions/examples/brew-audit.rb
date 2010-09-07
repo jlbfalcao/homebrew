@@ -103,15 +103,37 @@ def audit_formula_options f, text
   return problems
 end
 
+def audit_formula_instance f
+  problems = []
+
+  # Don't depend_on aliases; use full name
+  aliases = Formula.aliases
+  f.deps.select {|d| aliases.include? d}.each do |d|
+    problems << " * Dep #{d} is an alias; switch to the real name."
+  end
+
+  # Check for things we don't like to depend on.
+  # We allow non-Homebrew installs whenenever possible.
+  f.deps.each do |d|
+    case d
+    when "git"
+      problems << " * Don't use Git as a dependency; we allow non-Homebrew git installs."
+    end
+  end
+
+  # Google Code homepages should end in a slash
+  if f.homepage =~ %r[^https?://code\.google\.com/p/[^/]+[^/]$]
+    problems << " * Google Code homepage should end with a slash."
+  end
+
+  return problems
+end
+
 def audit_some_formulae
   ff.each do |f|
     problems = []
 
-    # Don't depend_on aliases; use full name
-    aliases = Formula.aliases
-    f.deps.select {|d| aliases.include? d}.each do |d|
-      problems << " * Dep #{d} is an alias; switch to the real name."
-    end
+    problems += audit_formula_instance f
 
     text = ""
     File.open(f.path, "r") { |afile| text = afile.read }
