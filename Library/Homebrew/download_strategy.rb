@@ -198,12 +198,16 @@ class SubversionDownloadStrategy <AbstractDownloadStrategy
     end
   end
 
+  def _fetch_command svncommand, url, target
+    [svn, svncommand, '--force', url, target]
+  end
+
   def fetch_repo target, url, revision=nil, ignore_externals=false
     # Use "svn up" when the repository already exists locally.
     # This saves on bandwidth and will have a similar effect to verifying the
     # cache as it will make any changes to get the right revision.
     svncommand = target.exist? ? 'up' : 'checkout'
-    args = [svn, svncommand, '--force', url, target]
+    args = _fetch_command svncommand, url, target
     args << '-r' << revision if revision
     args << '--ignore-externals' if ignore_externals
     quiet_safe_system *args
@@ -257,7 +261,11 @@ class GitDownloadStrategy <AbstractDownloadStrategy
       safe_system 'git', 'clone', @url, @clone # indeed, leave it verbose
     else
       puts "Updating #{@clone}"
-      Dir.chdir(@clone) { quiet_safe_system 'git', 'fetch', @url }
+      Dir.chdir(@clone) do
+        quiet_safe_system 'git', 'fetch', @url
+        # If we're going to checkout a tag, then we need to fetch new tags too.
+        quiet_safe_system 'git', 'fetch', '--tags' if @spec == :tag
+      end
     end
   end
 
