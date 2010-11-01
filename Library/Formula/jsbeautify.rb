@@ -1,16 +1,14 @@
 require 'formula'
 
 class Jsbeautify <Formula
-  url 'git://github.com/einars/js-beautify.git'
+  head 'git://github.com/einars/js-beautify.git'
   homepage 'http://github.com/einars/js-beautify'
-  version 'HEAD'
 
   depends_on 'v8'
 
   def install
-    v8path = "/usr/local/Cellar/v8/HEAD"
-    system "cd v8 && g++ -o jsbeautify jsbeautify.cpp -I#{v8path}/include/ -lv8 -L#{v8path}/lib/ && ls"
-    system "ls v8"
-    bin.install 'v8/jsbeautify'
+    v8_prefix = Formula.factory('v8').prefix
+    system "g++ -o jsbeautify v8/jsbeautify.cpp -I#{v8_prefix}/include/ -lv8 -L#{v8_prefix}/lib/"
+    bin.install 'jsbeautify'
   end
 end
